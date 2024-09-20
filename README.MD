@@ -211,5 +211,6 @@ Contributions are welcome! Please follow these steps:
 4. Push to the branch: `git push origin feature-name`.
 5. Submit a pull request.
 
-## License
-This project is licensed under the MIT License.
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=PromtEngineer/localGPT&type=Date)](https://star-history.com/#PromtEngineer/localGPT&Date)
