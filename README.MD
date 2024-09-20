@@ -1,5 +1,11 @@
 # localGPT-Vision
 
+[![GitHub Stars](https://img.shields.io/github/stars/PromtEngineer/Verbi?style=social)](https://github.com/PromtEngineer/Verbi/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/PromtEngineer/Verbi?style=social)](https://github.com/PromtEngineer/Verbi/network/members)
+[![GitHub Issues](https://img.shields.io/github/issues/PromtEngineer/Verbi)](https://github.com/PromtEngineer/Verbi/issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/PromtEngineer/Verbi)](https://github.com/PromtEngineer/Verbi/pulls)
+[![License](https://img.shields.io/github/license/PromtEngineer/Verbi)](https://github.com/PromtEngineer/Verbi/blob/main/LICENSE)
+
 localGPT-Vision is an end-to-end vision-based Retrieval-Augmented Generation (RAG) system. It allows users to upload and index documents (PDFs and images), ask questions about the content, and receive responses along with relevant document snippets. The retrieval is performed using the [ColPali](https://huggingface.co/blog/manu/colpali) model, and the retrieved pages are passed to a Vision Language Model (VLM) for generating responses. Currently, the code supports three VLMs: Qwen2-VL-7B-Instruct, Google Gemini, and OpenAI GPT-4. The project is built on top of the [Byaldi](https://github.com/AnswerDotAI/byaldi) library.
 
 ## Table of Contents
@@ -60,15 +66,15 @@ Follow these steps to set up and run the application on your local machine.
    conda activate localgpt-vision
    ```
 
-3. Install Transformers from HuggingFace - Dev version
+3a. Install Dependencies
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3b. Install Transformers from HuggingFace - Dev version
    ```bash
     pip uninstall transformers
     pip install git+https://github.com/huggingface/transformers
-   ```
-
-3. Install Dependencies
-   ```bash
-   pip install -r requirements.txt
    ```
 
 4. Set Environment Variables
