@@ -50,8 +50,8 @@ Follow these steps to set up and run the application on your local machine.
 
 1. Clone the Repository
    ```bash
-   git clone https://github.com/yourusername/localGPT-Vision.git
-   cd localGPT-Vision
+   git clone -b localGPT-Vision --single-branch https://github.com/PromtEngineer/localGPT.git localGPT_Vision
+   cd localGPT_Vision
    ```
 
 2. Create a Conda Environment
