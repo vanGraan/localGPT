@@ -166,3 +166,11 @@ cython_debug/
 #MacOS
 .DS_Store
 SOURCE_DOCUMENTS/.DS_Store
+
+
+
+
+.byaldi/
+sessions/
+static/images/
+uploaded_documents/

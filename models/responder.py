@@ -2,6 +2,7 @@
 
 from models.model_loader import load_model
 from logger import get_logger
+from PIL import Image
 import os
 
 logger = get_logger(__name__)
@@ -65,9 +66,35 @@ def generate_response(images, query, session_id, resized_height=280, resized_wid
             response = generate_gpt4_response(images, query, model)
             logger.info("Response generated using GPT-4 model.")
             return response
+        
+        elif model_choice == 'llama-vision':
+            # Load model, processor, and device
+            model, processor, device = load_model('llama-vision')
+
+            # Process images
+            image_paths = [os.path.join('static', image) for image in images]
+            # For simplicity, use the first image
+            image_path = image_paths[0]
+            image = Image.open(image_path).convert('RGB')
+
+            # Prepare messages
+            messages = [
+                {"role": "user", "content": [
+                    {"type": "image"},
+                    {"type": "text", "text": query}
+                ]}
+            ]
+            input_text = processor.apply_chat_template(messages, add_generation_prompt=True)
+            inputs = processor(image, input_text, return_tensors="pt").to(device)
+
+            # Generate response
+            output = model.generate(**inputs, max_new_tokens=512)
+            response = processor.decode(output[0], skip_special_tokens=True)
+            return response
+
         else:
-            logger.error(f"Invalid model choice: {model_choice}")
-            return "Invalid model selected."
+                logger.error(f"Invalid model choice: {model_choice}")
+                return "Invalid model selected."
     except Exception as e:
         logger.error(f"Error generating response: {e}")
         return "An error occurred while generating the response."

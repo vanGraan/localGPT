@@ -1,8 +1,10 @@
 # models/model_loader.py
 
 import os
-from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
 import torch
+from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
+from transformers import MllamaForConditionalGeneration
+
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -43,6 +45,7 @@ def load_model(model_choice):
         _model_cache[model_choice] = (model, processor, device)
         logger.info("Qwen model loaded and cached.")
         return _model_cache[model_choice]
+
     elif model_choice == 'gemini':
         # Load Gemini model
         import genai
@@ -52,6 +55,7 @@ def load_model(model_choice):
         _model_cache[model_choice] = (model, processor)
         logger.info("Gemini model loaded and cached.")
         return _model_cache[model_choice]
+
     elif model_choice == 'gpt4':
         # Load OpenAI GPT-4 model
         import openai
@@ -59,6 +63,23 @@ def load_model(model_choice):
         _model_cache[model_choice] = (None, None)
         logger.info("GPT-4 model ready and cached.")
         return _model_cache[model_choice]
+
+    elif model_choice == 'llama-vision':
+        # Load Llama-Vision model
+        device = detect_device()
+        # model_id = "meta-llama/Llama-3.2-11B-Vision-Instruct"
+        model_id = "alpindale/Llama-3.2-11B-Vision-Instruct"
+        model = MllamaForConditionalGeneration.from_pretrained(
+            model_id,
+            torch_dtype=torch.float16 if device != 'cpu' else torch.float32,
+            device_map="auto"
+        )
+        processor = AutoProcessor.from_pretrained(model_id)
+        model.to(device)
+        _model_cache[model_choice] = (model, processor, device)
+        logger.info("Llama-Vision model loaded and cached.")
+        return _model_cache[model_choice]
+
     else:
         logger.error(f"Invalid model choice: {model_choice}")
         raise ValueError("Invalid model choice.")
