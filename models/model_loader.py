@@ -4,6 +4,9 @@ import os
 import torch
 from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
 from transformers import MllamaForConditionalGeneration
+from transformers import AutoModelForCausalLM
+from vllm import LLM
+from vllm.sampling_params import SamplingParams
 
 from logger import get_logger
 
@@ -18,8 +21,8 @@ def detect_device():
     """
     if torch.cuda.is_available():
         return 'cuda'
-    elif torch.backends.mps.is_available():
-        return 'mps'
+    # elif torch.backends.mps.is_available():
+    #     return 'mps'
     else:
         return 'cpu'
 
@@ -79,7 +82,30 @@ def load_model(model_choice):
         _model_cache[model_choice] = (model, processor, device)
         logger.info("Llama-Vision model loaded and cached.")
         return _model_cache[model_choice]
-
+    
+    elif model_choice == "pixtral":
+        device = detect_device()
+        model = LLM(model="mistralai/Pixtral-12B-2409", tokenizer_mode="mistral")
+        sampling_params = SamplingParams(max_tokens=1024)
+        _model_cache[model_choice] = (model, sampling_params, device)
+        return _model_cache[model_choice]
+    
+    elif model_choice == "molmo":
+        device = detect_device()
+        processor = AutoProcessor.from_pretrained(
+            'allenai/Molmo-7B-D-0924',
+            trust_remote_code=True,
+            torch_dtype='auto',
+            device_map='auto'
+        )
+        model = AutoModelForCausalLM.from_pretrained(
+            'allenai/Molmo-7B-D-0924',
+            trust_remote_code=True,
+            torch_dtype='auto',
+            device_map='auto'
+        )
+        _model_cache[model_choice] = (model, processor, device)
+        return _model_cache[model_choice]
     else:
         logger.error(f"Invalid model choice: {model_choice}")
         raise ValueError("Invalid model choice.")

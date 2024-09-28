@@ -1,8 +1,10 @@
 # models/responder.py
 
 from models.model_loader import load_model
+from transformers import GenerationConfig
 from logger import get_logger
 from PIL import Image
+import torch
 import os
 
 logger = get_logger(__name__)
@@ -91,10 +93,101 @@ def generate_response(images, query, session_id, resized_height=280, resized_wid
             output = model.generate(**inputs, max_new_tokens=512)
             response = processor.decode(output[0], skip_special_tokens=True)
             return response
+        
+        elif model_choice == "pixtral":
 
+            model, sampling_params, device = load_model('pixtral')
+
+            image_urls = []
+            for img in images:
+                # Convert PIL Image to base64
+                buffered = io.BytesIO()
+                img.save(buffered, format="PNG")
+                img_str = base64.b64encode(buffered.getvalue()).decode()
+                image_urls.append(f"data:image/png;base64,{img_str}")
+
+            messages = [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": query},
+                        *[{"type": "image_url", "image_url": {"url": url}} for url in image_urls]
+                    ]
+                },
+            ]
+
+            outputs = model.chat(messages, sampling_params=sampling_params)
+            return outputs[0].outputs[0].text
+        
+        elif model_choice == "molmo":
+            
+            model, processor, device = load_model('molmo')
+            pil_images = []
+            for img_path in images:
+                full_path = os.path.join('static', img_path)
+                if os.path.exists(full_path):
+                    try:
+                        img = Image.open(full_path).convert('RGB')
+                        pil_images.append(img)
+                    except Exception as e:
+                        logger.error(f"Error opening image {full_path}: {e}")
+                else:
+                    logger.warning(f"Image file not found: {full_path}")
+
+            if not pil_images:
+                return "No images could be loaded for analysis."
+
+            try:
+                # Log the types and shapes of the images
+                logger.info(f"Number of images: {len(pil_images)}")
+                logger.info(f"Image types: {[type(img) for img in pil_images]}")
+                logger.info(f"Image sizes: {[img.size for img in pil_images]}")
+
+                # Process the images and text
+                inputs = processor.process(
+                    images=pil_images,
+                    text=query
+                )
+
+                # Log the keys and shapes of the inputs
+                logger.info(f"Input keys: {inputs.keys()}")
+                for k, v in inputs.items():
+                    if isinstance(v, torch.Tensor):
+                        logger.info(f"Input '{k}' shape: {v.shape}, dtype: {v.dtype}, device: {v.device}")
+                    else:
+                        logger.info(f"Input '{k}' type: {type(v)}")
+
+                # Move inputs to the correct device and make a batch of size 1
+                inputs = {k: v.to(model.device).unsqueeze(0) if isinstance(v, torch.Tensor) else v for k, v in inputs.items()}
+
+                # Log the updated shapes after moving to device
+                for k, v in inputs.items():
+                    if isinstance(v, torch.Tensor):
+                        logger.info(f"Updated input '{k}' shape: {v.shape}, dtype: {v.dtype}, device: {v.device}")
+
+                # Generate output
+                output = model.generate_from_batch(
+                    inputs,
+                    GenerationConfig(max_new_tokens=200, stop_strings="<|endoftext|>"),
+                    tokenizer=processor.tokenizer
+                )
+
+                # Only get generated tokens; decode them to text
+                generated_tokens = output[0, inputs['input_ids'].size(1):]
+                generated_text = processor.tokenizer.decode(generated_tokens, skip_special_tokens=True)
+
+            except Exception as e:
+                logger.error(f"Error in Molmo processing: {str(e)}", exc_info=True)
+                return f"An error occurred while processing the images: {str(e)}"
+            finally:
+                # Close the opened images to free up resources
+                for img in pil_images:
+                    img.close()
+
+            return generated_text
         else:
-                logger.error(f"Invalid model choice: {model_choice}")
-                return "Invalid model selected."
+            logger.error(f"Invalid model choice: {model_choice}")
+            return "Invalid model selected."
     except Exception as e:
         logger.error(f"Error generating response: {e}")
         return "An error occurred while generating the response."

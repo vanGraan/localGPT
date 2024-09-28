@@ -1,5 +1,3 @@
-# app.py
-
 import os
 import uuid
 import json
@@ -9,7 +7,7 @@ from models.retriever import retrieve_documents
 from models.responder import generate_response
 from werkzeug.utils import secure_filename
 from logger import get_logger
-from byaldi import RAGMultiModalModel  # Make sure to import RAGMultiModalModel here
+from byaldi import RAGMultiModalModel
 
 # Set the TOKENIZERS_PARALLELISM environment variable to suppress warnings
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
@@ -24,27 +22,25 @@ logger = get_logger(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploaded_documents'
 app.config['STATIC_FOLDER'] = 'static'
 app.config['SESSION_FOLDER'] = 'sessions'
-app.config['INDEX_FOLDER'] = '../'  # Add index folder configuration
+app.config['INDEX_FOLDER'] = os.path.join(os.getcwd(), '.byaldi')  # Set to .byaldi folder in current directory
 
 # Create necessary directories if they don't exist
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['STATIC_FOLDER'], exist_ok=True)
 os.makedirs(app.config['SESSION_FOLDER'], exist_ok=True)
-os.makedirs(app.config['INDEX_FOLDER'], exist_ok=True)  # Create index folder
 
 # Initialize global variables
 RAG_models = {}  # Dictionary to store RAG models per session
+app.config['INITIALIZATION_DONE'] = False  # Flag to track initialization
 logger.info("Application started.")
 
 def load_rag_model_for_session(session_id):
     """
     Loads the RAG model for the given session_id from the index on disk.
     """
-    index_name = session_id
-    index_path = os.path.join(app.config['INDEX_FOLDER'], index_name)
+    index_path = os.path.join(app.config['INDEX_FOLDER'], session_id)
 
     if os.path.exists(index_path):
-        # Load the RAG model
         try:
             RAG = RAGMultiModalModel.from_index(index_path)
             RAG_models[session_id] = RAG
@@ -54,24 +50,42 @@ def load_rag_model_for_session(session_id):
     else:
         logger.warning(f"No index found for session {session_id}.")
 
+def load_existing_indexes():
+    """
+    Loads all existing indexes from the .byaldi folder when the application starts.
+    """
+    global RAG_models
+    if os.path.exists(app.config['INDEX_FOLDER']):
+        for session_id in os.listdir(app.config['INDEX_FOLDER']):
+            if os.path.isdir(os.path.join(app.config['INDEX_FOLDER'], session_id)):
+                load_rag_model_for_session(session_id)
+    else:
+        logger.warning("No .byaldi folder found. No existing indexes to load.")
+
+@app.before_request
+def initialize_app():
+    """
+    Initializes the application by loading existing indexes.
+    This will run before the first request, but only once.
+    """
+    if not app.config['INITIALIZATION_DONE']:
+        load_existing_indexes()
+        app.config['INITIALIZATION_DONE'] = True
+        logger.info("Application initialized and indexes loaded.")
+
 @app.before_request
 def make_session_permanent():
     session.permanent = True
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
 
+
 @app.route('/', methods=['GET'])
 def home():
-    """
-    Renders the home page.
-    """
     return redirect(url_for('chat'))
 
 @app.route('/chat', methods=['GET', 'POST'])
 def chat():
-    """
-    Handles the chat interface where users can upload documents, index them, and chat.
-    """
     session_id = session['session_id']
     session_file = os.path.join(app.config['SESSION_FOLDER'], f"{session_id}.json")
 
@@ -89,7 +103,7 @@ def chat():
 
     if request.method == 'POST':
         if 'upload' in request.form:
-            # Handle file upload
+            # Handle file upload and indexing
             files = request.files.getlist('files')
             session_folder = os.path.join(app.config['UPLOAD_FOLDER'], session_id)
             os.makedirs(session_folder, exist_ok=True)
@@ -105,14 +119,11 @@ def chat():
                 index_name = session_id
                 index_path = os.path.join(app.config['INDEX_FOLDER'], index_name)
                 flash("Indexing documents. This may take a moment...", "info")
-                # Index documents
                 RAG = index_documents(session_folder, index_name=index_name, index_path=index_path)
-                RAG_models[session_id] = RAG  # Store RAG model for the session
+                RAG_models[session_id] = RAG
                 session['index_name'] = index_name
                 session['session_folder'] = session_folder
-                # Update indexed_files
                 indexed_files = os.listdir(session_folder)
-                # Save session data
                 session_data = {
                     'session_name': session_name,
                     'chat_history': chat_history,
@@ -134,17 +145,14 @@ def chat():
                     flash("Please enter a query.", "warning")
                     return redirect(url_for('chat'))
 
-                # Show loading spinner
                 flash("Generating response. Please wait...", "info")
 
-                # Get settings
                 model_choice = session.get('model', 'qwen')
                 resized_height = int(session.get('resized_height', 280))
                 resized_width = int(session.get('resized_width', 280))
 
                 RAG = RAG_models.get(session_id)
                 if not RAG:
-                    # Attempt to load RAG model from index
                     load_rag_model_for_session(session_id)
                     RAG = RAG_models.get(session_id)
                     if not RAG:
@@ -158,14 +166,12 @@ def chat():
                     resized_width=resized_width,
                     model_choice=model_choice
                 )
-                # Save conversation to chat history
                 chat_entry = {
                     'user': query,
                     'response': response,
                     'images': images
                 }
                 chat_history.append(chat_entry)
-                # Save session data
                 session_data = {
                     'session_name': session_name,
                     'chat_history': chat_history,
@@ -184,7 +190,6 @@ def chat():
             # Handle session renaming
             new_session_name = request.form.get('session_name', 'Untitled Session')
             session_name = new_session_name
-            # Save session data
             session_data = {
                 'session_name': session_name,
                 'chat_history': chat_history,
@@ -195,11 +200,9 @@ def chat():
             flash("Session name updated.", "success")
             return redirect(url_for('chat'))
         else:
-            # If neither 'upload', 'send_query', nor 'rename_session' is in request.form
             flash("Invalid request.", "warning")
             return redirect(url_for('chat'))
     else:
-        # Get list of chat sessions
         session_files = os.listdir(app.config['SESSION_FOLDER'])
         chat_sessions = []
         for file in session_files:
@@ -210,7 +213,6 @@ def chat():
                     name = data.get('session_name', 'Untitled Session')
                     chat_sessions.append({'id': s_id, 'name': name})
 
-        # Load settings
         model_choice = session.get('model', 'qwen')
         resized_height = session.get('resized_height', 280)
         resized_width = session.get('resized_width', 280)
@@ -222,11 +224,7 @@ def chat():
 
 @app.route('/switch_session/<session_id>')
 def switch_session(session_id):
-    """
-    Switches to a different chat session.
-    """
     session['session_id'] = session_id
-    # Attempt to load RAG model for the session
     if session_id not in RAG_models:
         load_rag_model_for_session(session_id)
     flash(f"Switched to session.", "info")
@@ -234,14 +232,10 @@ def switch_session(session_id):
 
 @app.route('/rename_session', methods=['POST'])
 def rename_session():
-    """
-    Renames the current chat session.
-    """
     session_id = session['session_id']
     new_session_name = request.form.get('new_session_name', 'Untitled Session')
     session_file = os.path.join(app.config['SESSION_FOLDER'], f"{session_id}.json")
 
-    # Load session data
     if os.path.exists(session_file):
         with open(session_file, 'r') as f:
             session_data = json.load(f)
@@ -250,19 +244,14 @@ def rename_session():
 
     session_data['session_name'] = new_session_name
 
-    # Save session data
     with open(session_file, 'w') as f:
         json.dump(session_data, f)
 
     flash("Session name updated.", "success")
     return redirect(url_for('chat'))
 
-
 @app.route('/settings', methods=['GET', 'POST'])
 def settings():
-    """
-    Renders and processes the settings page for model selection and image resolution.
-    """
     if request.method == 'POST':
         model_choice = request.form.get('model', 'qwen')
         resized_height = request.form.get('resized_height', 280)
@@ -275,7 +264,6 @@ def settings():
         flash("Settings updated.", "success")
         return redirect(url_for('chat'))
     else:
-        # Load settings
         model_choice = session.get('model', 'qwen')
         resized_height = session.get('resized_height', 280)
         resized_width = session.get('resized_width', 280)
@@ -284,16 +272,11 @@ def settings():
 
 @app.route('/new_session')
 def new_session():
-    """
-    Starts a new chat session.
-    """
     session_id = str(uuid.uuid4())
     session['session_id'] = session_id
-    # Assign default session name
     session_files = os.listdir(app.config['SESSION_FOLDER'])
     session_number = len([f for f in session_files if f.endswith('.json')]) + 1
     session_name = f"Session {session_number}"
-    # Save session data
     session_file = os.path.join(app.config['SESSION_FOLDER'], f"{session_id}.json")
     session_data = {
         'session_name': session_name,
@@ -307,29 +290,20 @@ def new_session():
 
 @app.route('/delete_session/<session_id>')
 def delete_session(session_id):
-    """
-    Deletes a chat session.
-    """
     try:
-        # Delete session file
         session_file = os.path.join(app.config['SESSION_FOLDER'], f"{session_id}.json")
         if os.path.exists(session_file):
             os.remove(session_file)
-        # Remove uploaded documents and reset RAG model
         global RAG_models
-        # Delete session folder
         session_folder = os.path.join(app.config['UPLOAD_FOLDER'], session_id)
         if os.path.exists(session_folder):
             import shutil
             shutil.rmtree(session_folder)
-        # Delete generated images
         session_images_folder = os.path.join('static', 'images', session_id)
         if os.path.exists(session_images_folder):
             import shutil
             shutil.rmtree(session_images_folder)
-        # Remove RAG model for session
         RAG_models.pop(session_id, None)
-        # If deleting current session, start a new one
         if session.get('session_id') == session_id:
             session['session_id'] = str(uuid.uuid4())
         logger.info(f"Session {session_id} deleted.")
