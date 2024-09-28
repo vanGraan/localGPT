@@ -4,9 +4,15 @@ import os
 import torch
 from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
 from transformers import MllamaForConditionalGeneration
-from transformers import AutoModelForCausalLM
-from vllm import LLM
 from vllm.sampling_params import SamplingParams
+from transformers import AutoModelForCausalLM
+import google.generativeai as genai
+from vllm import LLM
+
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 from logger import get_logger
 
@@ -21,8 +27,8 @@ def detect_device():
     """
     if torch.cuda.is_available():
         return 'cuda'
-    # elif torch.backends.mps.is_available():
-    #     return 'mps'
+    elif torch.backends.mps.is_available():
+        return 'mps'
     else:
         return 'cpu'
 
@@ -51,21 +57,13 @@ def load_model(model_choice):
 
     elif model_choice == 'gemini':
         # Load Gemini model
-        import genai
-        genai.api_key = os.environ.get('GENAI_API_KEY')
-        model = genai.GenerativeModel(model_name="gemini-1.5-pro")
-        processor = None
-        _model_cache[model_choice] = (model, processor)
-        logger.info("Gemini model loaded and cached.")
-        return _model_cache[model_choice]
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            raise ValueError("GOOGLE_API_KEY not found in .env file")
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-1.5-flash-002')  # Use the appropriate model name
+        return model, None
 
-    elif model_choice == 'gpt4':
-        # Load OpenAI GPT-4 model
-        import openai
-        openai.api_key = os.environ.get('OPENAI_API_KEY')
-        _model_cache[model_choice] = (None, None)
-        logger.info("GPT-4 model ready and cached.")
-        return _model_cache[model_choice]
 
     elif model_choice == 'llama-vision':
         # Load Llama-Vision model
@@ -85,7 +83,12 @@ def load_model(model_choice):
     
     elif model_choice == "pixtral":
         device = detect_device()
-        model = LLM(model="mistralai/Pixtral-12B-2409", tokenizer_mode="mistral")
+        model = LLM(model="mistralai/Pixtral-12B-2409", 
+                    tokenizer_mode="mistral",                 
+                    gpu_memory_utilization=0.8,  # Increase GPU memory utilization
+                    max_model_len=8192,  # Decrease max model length
+                    dtype="float16",  # Use half precision to save memory
+                    trust_remote_code=True)
         sampling_params = SamplingParams(max_tokens=1024)
         _model_cache[model_choice] = (model, sampling_params, device)
         return _model_cache[model_choice]
@@ -93,13 +96,13 @@ def load_model(model_choice):
     elif model_choice == "molmo":
         device = detect_device()
         processor = AutoProcessor.from_pretrained(
-            'allenai/Molmo-7B-D-0924',
+            'allenai/MolmoE-1B-0924',
             trust_remote_code=True,
             torch_dtype='auto',
             device_map='auto'
         )
         model = AutoModelForCausalLM.from_pretrained(
-            'allenai/Molmo-7B-D-0924',
+            'allenai/MolmoE-1B-0924',
             trust_remote_code=True,
             torch_dtype='auto',
             device_map='auto'
