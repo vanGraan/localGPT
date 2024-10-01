@@ -4,24 +4,5 @@
 			"path": ".."
 		}
 	],
-	"settings": {
-		"cSpell.words": [
-			"Airoboros",
-			"chromadb",
-			"dotenv",
-			"GGML",
-			"ggmlv",
-			"gguf",
-			"hkunlp",
-			"intfloat",
-			"langchain",
-			"myenv",
-			"pythonw",
-			"pyvenv",
-			"Quadro",
-			"safetensors",
-			"unsloth",
-			"vectorstores"
-		]
-	}
+	"settings": {}
 }

@@ -87,7 +87,7 @@ from langchain_community.embeddings import (
     HuggingFaceBgeEmbeddings,
 )
 from langchain_community.vectorstores import Chroma
-from langchain_community.schema import Document # type: ignore
+from langchain_community.schema import Document
 
 
 
