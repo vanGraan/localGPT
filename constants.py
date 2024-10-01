@@ -57,6 +57,40 @@ DOCUMENT_MAP = {
     ".doc": Docx2txtLoader,
 }
 
+DOCUMENT_MAP = {
+    ".txt": TextLoader,
+    ".md": TextLoader,
+    ".py": TextLoader,
+    ".pdf": PDFMinerLoader,
+    ".csv": CSVLoader,
+    ".xls": UnstructuredExcelLoader,
+    ".xlsx": UnstructuredExcelLoader,
+    ".docx": Docx2txtLoader,
+    ".doc": Docx2txtLoader,
+}
+
+
+
+from langchain_community.document_loaders import (
+    CSVLoader,
+    PDFMinerLoader,
+    TextLoader,
+    UnstructuredExcelLoader,
+    Docx2txtLoader,
+    UnstructuredFileLoader,
+    UnstructuredMarkdownLoader,
+    UnstructuredHTMLLoader,
+)
+from langchain_community.embeddings import (
+    HuggingFaceEmbeddings,
+    HuggingFaceInstructEmbeddings,
+    HuggingFaceBgeEmbeddings,
+)
+from langchain_community.vectorstores import Chroma
+from langchain_community.schema import Document
+
+
+
 # Default Instructor Model
 EMBEDDING_MODEL_NAME = "hkunlp/instructor-large"  # Uses 1.5 GB of VRAM (High Accuracy with lower VRAM usage)
 

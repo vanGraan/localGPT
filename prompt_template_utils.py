@@ -9,6 +9,28 @@ from langchain.prompts import PromptTemplate
 
 # this is specific to Llama-2.
 
+from langchain_community.document_loaders import (
+    CSVLoader,
+    PDFMinerLoader,
+    TextLoader,
+    UnstructuredExcelLoader,
+    Docx2txtLoader,
+    UnstructuredFileLoader,
+    UnstructuredMarkdownLoader,
+    UnstructuredHTMLLoader,
+)
+from langchain_community.embeddings import (
+    HuggingFaceEmbeddings,
+    HuggingFaceInstructEmbeddings,
+    HuggingFaceBgeEmbeddings,
+)
+from langchain_community.vectorstores import Chroma
+from langchain_community.schema import Document
+
+
+
+
+
 system_prompt = """You are a helpful assistant, you will use the provided context to answer user questions.
 Read the given context before answering questions and think step by step. If you can not answer a user question based on 
 the provided context, inform the user. Do not use any other information for answering user. Provide a detailed answer to the question."""

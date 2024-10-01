@@ -10,6 +10,23 @@ from streamlit_extras.add_vertical_space import add_vertical_space
 from langchain.prompts import PromptTemplate
 from langchain.memory import ConversationBufferMemory
 
+from langchain_community.document_loaders import (
+    CSVLoader,
+    PDFMinerLoader,
+    TextLoader,
+    UnstructuredExcelLoader,
+    Docx2txtLoader,
+    UnstructuredFileLoader,
+    UnstructuredMarkdownLoader,
+    UnstructuredHTMLLoader,
+)
+from langchain_community.embeddings import (
+    HuggingFaceEmbeddings,
+    HuggingFaceInstructEmbeddings,
+    HuggingFaceBgeEmbeddings,
+)
+from langchain_community.vectorstores import Chroma
+from langchain_community.schema import Document
 
 def model_memory():
     # Adding history to the model.

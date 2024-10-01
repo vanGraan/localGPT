@@ -9,6 +9,8 @@ from flask import Flask, jsonify, request
 from langchain.chains import RetrievalQA
 from langchain.embeddings import HuggingFaceInstructEmbeddings
 
+
+
 # from langchain.embeddings import HuggingFaceEmbeddings
 from run_localGPT import load_model
 from prompt_template_utils import get_prompt_template
@@ -21,6 +23,31 @@ from constants import CHROMA_SETTINGS, EMBEDDING_MODEL_NAME, PERSIST_DIRECTORY, 
 
 # API queue addition
 from threading import Lock
+
+
+
+from langchain_community.document_loaders import (
+    CSVLoader,
+    PDFMinerLoader,
+    TextLoader,
+    UnstructuredExcelLoader,
+    Docx2txtLoader,
+    UnstructuredFileLoader,
+    UnstructuredMarkdownLoader,
+    UnstructuredHTMLLoader,
+)
+from langchain_community.embeddings import (
+    HuggingFaceEmbeddings,
+    HuggingFaceInstructEmbeddings,
+    HuggingFaceBgeEmbeddings,
+)
+from langchain_community.vectorstores import Chroma
+from langchain_community.schema import Document
+
+
+
+
+
 
 request_lock = Lock()
 

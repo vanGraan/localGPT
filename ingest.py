@@ -4,10 +4,18 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_compl
 
 import click
 import torch
-from langchain.docstore.document import Document
-from langchain.text_splitter import Language, RecursiveCharacterTextSplitter
-from langchain.vectorstores import Chroma
+#from langchain.docstore.document import Document
+#from langchain.text_splitter import Language, RecursiveCharacterTextSplitter
+#from langchain.vectorstores import Chroma
 from utils import get_embeddings
+from langchain_community.vectorstores import Chroma ###
+#from langchain.embeddings import HuggingFaceEmbeddings
+#from langchain.vectorstores import Chroma
+#from langchain.document_loaders import CSVLoader, PDFMinerLoader, TextLoader, UnstructuredExcelLoader, Docx2txtLoader, UnstructuredFileLoader, UnstructuredMarkdownLoader, UnstructuredHTMLLoader
+#from langchain.embeddings import HuggingFaceInstructEmbeddings, HuggingFaceBgeEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings, HuggingFaceInstructEmbeddings, HuggingFaceBgeEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_community.document_loaders import CSVLoader, PDFMinerLoader, TextLoader, UnstructuredExcelLoader, Docx2txtLoader, UnstructuredFileLoader, UnstructuredMarkdownLoader, UnstructuredHTMLLoader
 
 from constants import (
     CHROMA_SETTINGS,
@@ -17,6 +25,24 @@ from constants import (
     PERSIST_DIRECTORY,
     SOURCE_DIRECTORY,
 )
+
+from langchain_community.document_loaders import (
+    CSVLoader,
+    PDFMinerLoader,
+    TextLoader,
+    UnstructuredExcelLoader,
+    Docx2txtLoader,
+    UnstructuredFileLoader,
+    UnstructuredMarkdownLoader,
+    UnstructuredHTMLLoader,
+)
+from langchain_community.embeddings import (
+    HuggingFaceEmbeddings,
+    HuggingFaceInstructEmbeddings,
+    HuggingFaceBgeEmbeddings,
+)
+from langchain_community.vectorstores import Chroma
+from langchain_community.schema import Document
 
 
 def file_log(logentry):

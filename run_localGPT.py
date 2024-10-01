@@ -4,7 +4,7 @@ import click
 import torch
 import utils
 from langchain.chains import RetrievalQA
-from langchain.embeddings import HuggingFaceInstructEmbeddings
+#from langchain.embeddings import HuggingFaceInstructEmbeddings
 from langchain.llms import HuggingFacePipeline
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler  # for streaming response
 from langchain.callbacks.manager import CallbackManager
@@ -28,6 +28,12 @@ from load_models import (
     load_full_model,
 )
 
+from langchain_community.embeddings import HuggingFaceEmbeddings, HuggingFaceInstructEmbeddings, HuggingFaceBgeEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain_community.document_loaders import CSVLoader, PDFMinerLoader, TextLoader, UnstructuredExcelLoader, Docx2txtLoader, UnstructuredFileLoader, UnstructuredMarkdownLoader, UnstructuredHTMLLoader
+
+
+
 from constants import (
     EMBEDDING_MODEL_NAME,
     PERSIST_DIRECTORY,
@@ -37,6 +43,24 @@ from constants import (
     MODELS_PATH,
     CHROMA_SETTINGS,
 )
+
+from langchain_community.document_loaders import (
+    CSVLoader,
+    PDFMinerLoader,
+    TextLoader,
+    UnstructuredExcelLoader,
+    Docx2txtLoader,
+    UnstructuredFileLoader,
+    UnstructuredMarkdownLoader,
+    UnstructuredHTMLLoader,
+)
+from langchain_community.embeddings import (
+    HuggingFaceEmbeddings,
+    HuggingFaceInstructEmbeddings,
+    HuggingFaceBgeEmbeddings,
+)
+from langchain_community.vectorstores import Chroma
+from langchain_community.schema import Document
 
 
 def load_model(device_type, model_id, model_basename=None, LOGGING=logging):

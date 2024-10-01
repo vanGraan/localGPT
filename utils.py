@@ -2,9 +2,29 @@ import os
 import csv
 from datetime import datetime
 from constants import EMBEDDING_MODEL_NAME
-from langchain.embeddings import HuggingFaceInstructEmbeddings
-from langchain.embeddings import HuggingFaceBgeEmbeddings
-from langchain.embeddings import HuggingFaceEmbeddings
+#from langchain.embeddings import HuggingFaceInstructEmbeddings
+#from langchain.embeddings import HuggingFaceBgeEmbeddings
+#from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings, HuggingFaceInstructEmbeddings, HuggingFaceBgeEmbeddings
+
+from langchain_community.document_loaders import (
+    CSVLoader,
+    PDFMinerLoader,
+    TextLoader,
+    UnstructuredExcelLoader,
+    Docx2txtLoader,
+    UnstructuredFileLoader,
+    UnstructuredMarkdownLoader,
+    UnstructuredHTMLLoader,
+)
+from langchain_community.embeddings import (
+    HuggingFaceEmbeddings,
+    HuggingFaceInstructEmbeddings,
+    HuggingFaceBgeEmbeddings,
+)
+from langchain_community.vectorstores import Chroma
+from langchain_community.schema import Document
+
 
 
 def log_to_csv(question, answer):
